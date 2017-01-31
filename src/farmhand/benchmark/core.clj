@@ -21,7 +21,6 @@
   ;;
   ;; Queue a bunch of jobs, wait for them all to be processed
   ;;
-  ;; Poor man's way of clearing out redis:
   (let [start (System/currentTimeMillis)
         pool (redis/create-pool {})]
     (dotimes [n 10000]
