@@ -5,9 +5,7 @@
   (:gen-class))
 
 (def counter (atom 0))
-
 (defn job [] (swap! counter inc))
-
 (defn fail [] (throw (Exception. "foo")))
 
 (defn- print-duration
@@ -17,15 +15,13 @@
 
 (defn -main
   [& args]
-  ;; Really basic test
-  ;;
-  ;; Queue a bunch of jobs, wait for them all to be processed
-  ;;
+  ;; Really basic test - queue a bunch of jobs, wait for them all to be
+  ;; processed
   (let [start (System/currentTimeMillis)
         pool (redis/create-pool {})]
     (dotimes [n 10000]
-      (farmhand/enqueue {:fn-var #'job} pool)
-      (farmhand/enqueue {:fn-var #'fail} pool))
+      (farmhand/enqueue pool {:fn-var #'job})
+      (farmhand/enqueue pool {:fn-var #'fail}))
     (redis/close-pool pool)
     (print-duration "Queuing duration: " start)
     (let [processing-start (System/currentTimeMillis)]
@@ -35,9 +31,7 @@
                    0))
       (print-duration "Processing duration: " processing-start)
       (print-duration "Total duration: " start))
-
     (redis/with-jedis @farmhand/pool* jedis
       (assert (= (.zcard jedis "farmhand:completed") 10000))
       (assert (= (.zcard jedis "farmhand:dead") 10000)))
-
     (farmhand/stop-server)))
