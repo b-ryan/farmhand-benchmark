@@ -18,20 +18,19 @@
   ;; Really basic test - queue a bunch of jobs, wait for them all to be
   ;; processed
   (let [start (System/currentTimeMillis)
-        pool (redis/create-pool {})]
+        context (farmhand/create-context {:prefix "farmhand-benchmark:"})]
     (dotimes [n 10000]
-      (farmhand/enqueue pool {:fn-var #'job})
-      (farmhand/enqueue pool {:fn-var #'fail}))
-    (redis/close-pool pool)
+      (farmhand/enqueue context {:fn-var #'job})
+      (farmhand/enqueue context {:fn-var #'fail}))
     (print-duration "Queuing duration: " start)
     (let [processing-start (System/currentTimeMillis)]
-      (farmhand/start-server {:num-workers 1})
-      (while (not= (redis/with-jedis @farmhand/pool* jedis
-                     (.llen jedis "farmhand:queue:default"))
+      (farmhand/start-server {:num-workers 1 :context context})
+      (while (not= (redis/with-jedis [{:keys [jedis]} @farmhand/context*]
+                     (.llen jedis "farmhand-benchmark:queue:default"))
                    0))
       (print-duration "Processing duration: " processing-start)
       (print-duration "Total duration: " start))
-    (redis/with-jedis @farmhand/pool* jedis
-      (assert (= (.zcard jedis "farmhand:completed") 10000))
-      (assert (= (.zcard jedis "farmhand:dead") 10000)))
+    (redis/with-jedis [{:keys [jedis]} @farmhand/context*]
+      (assert (= (.zcard jedis "farmhand-benchmark:completed") 10000))
+      (assert (= (.zcard jedis "farmhand-benchmark:dead") 10000)))
     (farmhand/stop-server)))
