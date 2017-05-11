@@ -31,6 +31,6 @@
       (print-duration "Processing duration: " processing-start)
       (print-duration "Total duration: " start))
     (redis/with-jedis [{:keys [jedis]} @farmhand/context*]
-      (assert (= (.zcard jedis "farmhand-benchmark:completed") 10000))
-      (assert (= (.zcard jedis "farmhand-benchmark:dead") 10000)))
+      (assert (= (.zcard jedis "farmhand-benchmark:registry:completed") 10000))
+      (assert (= (.zcard jedis "farmhand-benchmark:registry:dead") 10000)))
     (farmhand/stop-server)))
